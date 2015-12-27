@@ -32,10 +32,10 @@ You can see the reference material to add the appropriate filters to these examp
 1. Open and Run ssbTXhilbert.grc in GNU Radio Companion.  This records your voice via your computer microphone to a file $HOME/test.dat. This file is complex float data. Hit Stop to stop recording.
 2. Open and Run ssbRX.grc in GNU Radio Companion. This loops back your voice through your computer speakers.
 
-.. image: gfx/ssbRX.grc
+.. image:: gfx/ssbRX.grc.png
     :alt: simplest no-filter SSB receiver
 
-.. image: gfx/ssbTXhilbert.grc
+.. image:: gfx/ssbTXhilbert.grc.png
     :alt: simplest no-filter SSB transmitter
 
 

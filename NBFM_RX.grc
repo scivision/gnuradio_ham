@@ -74,33 +74,6 @@
     </param>
   </block>
   <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>True</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(224, 67)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>decim</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>84</value>
-    </param>
-  </block>
-  <block>
     <key>variable_slider</key>
     <param>
       <key>comment</key>
@@ -242,14 +215,14 @@
     </param>
     <param>
       <key>value</key>
-      <value>48000*decim</value>
+      <value>4e6</value>
     </param>
   </block>
   <block>
     <key>analog_nbfm_rx</key>
     <param>
       <key>audio_rate</key>
-      <value>48000</value>
+      <value>50000</value>
     </param>
     <param>
       <key>alias</key>
@@ -269,7 +242,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(512, 179)</value>
+      <value>(520, 187)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -293,7 +266,7 @@
     </param>
     <param>
       <key>quad_rate</key>
-      <value>48000</value>
+      <value>50000</value>
     </param>
     <param>
       <key>tau</key>
@@ -324,7 +297,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(664, 387)</value>
+      <value>(864, 387)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -348,11 +321,7 @@
     </param>
   </block>
   <block>
-    <key>band_pass_filter</key>
-    <param>
-      <key>beta</key>
-      <value>6.76</value>
-    </param>
+    <key>rational_resampler_xxx</key>
     <param>
       <key>alias</key>
       <value></value>
@@ -367,43 +336,31 @@
     </param>
     <param>
       <key>decim</key>
-      <value>decim</value>
+      <value>80</value>
     </param>
     <param>
       <key>_enabled</key>
       <value>True</value>
     </param>
     <param>
-      <key>type</key>
-      <value>fir_filter_ccc</value>
+      <key>fbw</key>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(328, 147)</value>
+      <value>(328, 187)</value>
     </param>
     <param>
       <key>_rotation</key>
       <value>0</value>
     </param>
     <param>
-      <key>gain</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>high_cutoff_freq</key>
-      <value>7.5e3</value>
-    </param>
-    <param>
       <key>id</key>
-      <value>band_pass_filter_0</value>
+      <value>rational_resampler_xxx_0</value>
     </param>
     <param>
       <key>interp</key>
       <value>1</value>
-    </param>
-    <param>
-      <key>low_cutoff_freq</key>
-      <value>-7.5e3</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -414,16 +371,71 @@
       <value>0</value>
     </param>
     <param>
-      <key>samp_rate</key>
-      <value>samp_rate</value>
+      <key>taps</key>
+      <value></value>
     </param>
     <param>
-      <key>width</key>
-      <value>1e3</value>
+      <key>type</key>
+      <value>ccc</value>
+    </param>
+  </block>
+  <block>
+    <key>rational_resampler_xxx</key>
+    <param>
+      <key>alias</key>
+      <value></value>
     </param>
     <param>
-      <key>win</key>
-      <value>firdes.WIN_HAMMING</value>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>decim</key>
+      <value>25</value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>fbw</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(696, 187)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>rational_resampler_xxx_0_0</value>
+    </param>
+    <param>
+      <key>interp</key>
+      <value>24</value>
+    </param>
+    <param>
+      <key>maxoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>minoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>taps</key>
+      <value></value>
+    </param>
+    <param>
+      <key>type</key>
+      <value>fff</value>
     </param>
   </block>
   <block>
@@ -1074,7 +1086,7 @@
     </param>
     <param>
       <key>clock_rate</key>
-      <value>0.0</value>
+      <value>16e6</value>
     </param>
     <param>
       <key>comment</key>
@@ -1098,7 +1110,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(128, 243)</value>
+      <value>(112, 243)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1372,7 +1384,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(712, 219)</value>
+      <value>(864, 219)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1437,25 +1449,31 @@
   </block>
   <connection>
     <source_block_id>analog_nbfm_rx_0</source_block_id>
-    <sink_block_id>audio_sink_0</sink_block_id>
+    <sink_block_id>rational_resampler_xxx_0_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
   <connection>
-    <source_block_id>analog_nbfm_rx_0</source_block_id>
-    <sink_block_id>wxgui_scopesink2_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>band_pass_filter_0</source_block_id>
+    <source_block_id>rational_resampler_xxx_0</source_block_id>
     <sink_block_id>analog_nbfm_rx_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
   <connection>
+    <source_block_id>rational_resampler_xxx_0_0</source_block_id>
+    <sink_block_id>audio_sink_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>rational_resampler_xxx_0_0</source_block_id>
+    <sink_block_id>wxgui_scopesink2_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
     <source_block_id>uhd_usrp_source_0</source_block_id>
-    <sink_block_id>band_pass_filter_0</sink_block_id>
+    <sink_block_id>rational_resampler_xxx_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>

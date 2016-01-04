@@ -74,33 +74,6 @@
     </param>
   </block>
   <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>True</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(192, -5)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>decim</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>166</value>
-    </param>
-  </block>
-  <block>
     <key>variable_slider</key>
     <param>
       <key>comment</key>
@@ -112,7 +85,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>107.9e6</value>
+      <value>162.475e6</value>
     </param>
     <param>
       <key>_enabled</key>
@@ -140,11 +113,11 @@
     </param>
     <param>
       <key>max</key>
-      <value>107.9e6</value>
+      <value>162.55e6</value>
     </param>
     <param>
       <key>min</key>
-      <value>87.9e6</value>
+      <value>162.4e6</value>
     </param>
     <param>
       <key>notebook</key>
@@ -152,7 +125,7 @@
     </param>
     <param>
       <key>num_steps</key>
-      <value>200</value>
+      <value>8</value>
     </param>
     <param>
       <key>style</key>
@@ -171,7 +144,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>45</value>
+      <value>60</value>
     </param>
     <param>
       <key>_enabled</key>
@@ -242,14 +215,14 @@
     </param>
     <param>
       <key>value</key>
-      <value>48e3*decim</value>
+      <value>48000*12</value>
     </param>
   </block>
   <block>
-    <key>analog_wfm_rcv</key>
+    <key>analog_nbfm_rx</key>
     <param>
-      <key>audio_decimation</key>
-      <value>4</value>
+      <key>audio_rate</key>
+      <value>48000</value>
     </param>
     <param>
       <key>alias</key>
@@ -269,7 +242,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(456, 267)</value>
+      <value>(488, 235)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -277,7 +250,11 @@
     </param>
     <param>
       <key>id</key>
-      <value>analog_wfm_rcv_0</value>
+      <value>analog_nbfm_rx_0</value>
+    </param>
+    <param>
+      <key>max_dev</key>
+      <value>5e3</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -289,7 +266,11 @@
     </param>
     <param>
       <key>quad_rate</key>
-      <value>48000*4</value>
+      <value>samp_rate</value>
+    </param>
+    <param>
+      <key>tau</key>
+      <value>75e-6</value>
     </param>
   </block>
   <block>
@@ -359,7 +340,7 @@
     </param>
     <param>
       <key>decim</key>
-      <value>decim/4</value>
+      <value>1</value>
     </param>
     <param>
       <key>_enabled</key>
@@ -371,7 +352,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(336, 83)</value>
+      <value>(328, 83)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -383,7 +364,7 @@
     </param>
     <param>
       <key>high_cutoff_freq</key>
-      <value>75e3</value>
+      <value>7.5e3</value>
     </param>
     <param>
       <key>id</key>
@@ -395,7 +376,7 @@
     </param>
     <param>
       <key>low_cutoff_freq</key>
-      <value>-75e3</value>
+      <value>-7.5e3</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -411,7 +392,7 @@
     </param>
     <param>
       <key>width</key>
-      <value>25e3</value>
+      <value>2.5e3</value>
     </param>
     <param>
       <key>win</key>
@@ -1364,7 +1345,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(664, 235)</value>
+      <value>(712, 219)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -1428,20 +1409,20 @@
     </param>
   </block>
   <connection>
-    <source_block_id>analog_wfm_rcv_0</source_block_id>
+    <source_block_id>analog_nbfm_rx_0</source_block_id>
     <sink_block_id>audio_sink_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
   <connection>
-    <source_block_id>analog_wfm_rcv_0</source_block_id>
+    <source_block_id>analog_nbfm_rx_0</source_block_id>
     <sink_block_id>wxgui_scopesink2_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
   <connection>
     <source_block_id>band_pass_filter_0</source_block_id>
-    <sink_block_id>analog_wfm_rcv_0</sink_block_id>
+    <sink_block_id>analog_nbfm_rx_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>

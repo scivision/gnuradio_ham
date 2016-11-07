@@ -2,6 +2,16 @@
 GNU Radio amateur radio examples
 ================================
 
+.. contents::
+
+Red Pitaya
+==========
+`RedPitaya` contains code for [Red Pitaya](https://www.scivision.co/red-pitaya-gnuradio-setup) [PiRadar](https://www.scivision.co/pi-radar).
+
+SSB Examples
+============
+
+
 First we start with the most basic example of SSB. 
 This example lacks the filtering normally used with these methods to be as minimal as possible.
 They work via files recorded to disk using your computer's microphone.
@@ -13,7 +23,7 @@ In AN1981, Fig. 5 shows the Phasing method transmitter.
 In both cases, ignore the divide-by-4 of AN1981 as that's peculiar to their system.
 
 Simplest synthethic SSB simulation
-==================================
+----------------------------------
 This simulation doesn't use any filters, and so would never work in the real world unless there were no other transmissions
 within a few octaves of your sampling bandwidth. 
 You can see in the FFT scope on transmit that it is indeed USB transmission.

@@ -6,7 +6,7 @@ GNU Radio amateur radio examples
 
 Red Pitaya
 ==========
-`RedPitaya` contains code for [Red Pitaya](https://www.scivision.co/red-pitaya-gnuradio-setup) [PiRadar](https://www.scivision.co/pi-radar).
+`RedPitaya` contains code for `Red Pitaya <https://www.scivision.co/red-pitaya-gnuradio-setup>`_ `PiRadar <https://www.scivision.co/pi-radar>`_.
 
 SSB Examples
 ============

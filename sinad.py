@@ -30,9 +30,9 @@ class sinad_ff(gr.sync_block):
             "sinad_ff",
             [np.float32],
             [np.float32])
-	self.Fs = Fs
-	self.fRef = sinadFreq
-	self.refWidth = 20
+        self.Fs = Fs
+        self.fRef = sinadFreq
+        self.refWidth = 20
 
 
     def work(self, input_items, output_items):

@@ -2,6 +2,8 @@
 GNU Radio amateur radio examples
 ================================
 
+Hi!  Let me know if there's anything else/more you'd like to see for amateur radio with the Red Pitaya / Raspberry Pi using GNU Radio.
+
 .. contents::
 
 Red Pitaya

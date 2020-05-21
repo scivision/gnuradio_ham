@@ -1,16 +1,19 @@
-#!/usr/bin/python2
-from __future__ import division
+#!/usr/bin/env python3
 from math import log10
 
-from PyQt4 import Qt
-from gnuradio import audio, analog, blocks, filter, gr, qtgui
+from gnuradio import audio, analog, blocks, filter, gr
 from gnuradio.eng_option import eng_option
 from gnuradio.filter import firdes
-from gnuradio.qtgui import Range, RangeWidget
 from optparse import OptionParser
 import sip
 import sys
 
+try:
+    from PyQt5 import Qt
+    from gnuradio import qtgui
+    from gnuradio.qtgui import Range, RangeWidget
+except ImportError:
+    Qt = qtgui = Range = RangeWidget = None
 #
 from sinad import sinad_ff
 

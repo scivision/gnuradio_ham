@@ -1,11 +1,36 @@
 # GNU Radio amateur radio examples
 
+FM simulation including SINAD reading in Python script:
 
-## Red Pitaya
+```sh
+python3 sim_amfmssb.py
+```
 
-[RedPitaya](./RedPitaya) contains code for [Red
-Pitaya](https://www.scivision.dev/red-pitaya-gnuradio-setup)
+The .grc files can be run in GNU Radio Companion.
+
+```sh
+gnuradio-companion ssbRX.grc
+```
+
+
+## Install GNU Radio
+
+* Linux: `apt install gnuradio`
+* Mac: `brew install gnuradio`
+* Windows: [Install GNU Radio on Windows](https://wiki.gnuradio.org/index.php/WindowsInstall)
+
+## Hardware Examples
+
+
+[USRP](./USRP)
+contains code for
+[USRP devices](https://wiki.gnuradio.org/index.php/USRP_Source).
+
+[RedPitaya](./RedPitaya) contains code for
+[Red Pitaya](https://www.scivision.dev/red-pitaya-gnuradio-setup)
 [PiRadar](https://www.scivision.dev/pi-radar).
+
+
 
 ## SSB Examples
 

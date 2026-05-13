@@ -1,25 +1,55 @@
 #!/usr/bin/env python3
-from math import log10
+
+from math import isfinite, log10
 
 from gnuradio import audio, analog, blocks, filter, gr
 from gnuradio.eng_option import eng_option
-from gnuradio.filter import firdes
+from gnuradio.filter import firdes, window
 from optparse import OptionParser
-import sip
 import sys
+import logging
 
-try:
-    from PyQt5 import Qt
-    from gnuradio import qtgui
-    from gnuradio.qtgui import Range, RangeWidget
-except ImportError:
-    Qt = qtgui = Range = RangeWidget = None
+from PyQt5 import Qt, sip
+from gnuradio import qtgui
+from gnuradio.qtgui import Range, RangeWidget
+
 #
-from sinad import sinad_ff
+from sinad import Sinad
 
 v2dbm = 316.18e-3  # V
 
 modtype = "fm"
+
+# Realtime stability toggles. Heavy analysis chains can starve the audio path.
+ENABLE_SINAD = False
+ENABLE_RXIF_SPECAN = False
+ENABLE_RXAUDIO_SPECAN = False
+
+# Decimate visualization paths to protect realtime audio.
+GUI_KEEP_ONE_IN_N_COMPLEX = 8
+GUI_KEEP_ONE_IN_N_FLOAT = 8
+GUI_KEEP_ONE_IN_N_SINAD_TREND = 64
+SINAD_DISPLAY_SMOOTH_ALPHA = 0.08
+SINAD_NUMERIC_UPDATE_MS = 250
+
+
+def set_analysis_profile(profile):
+    global ENABLE_SINAD, ENABLE_RXIF_SPECAN, ENABLE_RXAUDIO_SPECAN
+
+    if profile == "audio-only":
+        ENABLE_SINAD = False
+        ENABLE_RXIF_SPECAN = False
+        ENABLE_RXAUDIO_SPECAN = False
+    elif profile == "audio-spec":
+        ENABLE_SINAD = False
+        ENABLE_RXIF_SPECAN = False
+        ENABLE_RXAUDIO_SPECAN = True
+    elif profile == "full-analysis":
+        ENABLE_SINAD = True
+        ENABLE_RXIF_SPECAN = True
+        ENABLE_RXAUDIO_SPECAN = True
+    else:
+        raise ValueError(f"unknown analysis profile: {profile}")
 
 
 def common_params(self):
@@ -69,7 +99,7 @@ def common_params(self):
 def module_setup(self):
     # %% transmitter
     self.mod_upsample = filter.rational_resampler_ccc(
-        interpolation=self.samp_rate // self.fs_audio, decimation=1, taps=None, fractional_bw=None
+        interpolation=self.samp_rate // self.fs_audio, decimation=1
     )
 
     self.mod_source = analog.sig_source_f(
@@ -84,7 +114,7 @@ def module_setup(self):
             audio_rate=self.fs_audio, quad_rate=self.samp_rate, tau=75e-6, max_dev=self.fmbw
         )
     elif modtype == "ssb":
-        self.hilb = filter.hilbert_fc(256, firdes.WIN_HAMMING, 6.76)
+        self.hilb = filter.hilbert_fc(256, window.WIN_HAMMING, 6.76)
 
     self.TX_LO = analog.sig_source_c(self.samp_rate, analog.GR_SIN_WAVE, self.ftx, 1, 0)
 
@@ -103,12 +133,12 @@ def module_setup(self):
     self.rx_mixer = blocks.multiply_cc()
 
     self.rx_downsample = filter.rational_resampler_ccc(
-        interpolation=1, decimation=self.samp_rate // self.fs_audio, taps=None, fractional_bw=None
+        interpolation=1, decimation=self.samp_rate // self.fs_audio
     )
 
     if modtype == "am":
         self.rxif_filter = filter.fir_filter_ccc(
-            1, firdes.low_pass(1, self.fs_audio, self.bwrx / 2, 200, firdes.WIN_HAMMING, 6.76)
+            1, firdes.low_pass(1, self.fs_audio, self.bwrx / 2, 200, window.WIN_HAMMING, 6.76)
         )
 
         self.agc = analog.agc2_cc(attack_rate=1, decay_rate=1, reference=0.9, gain=100)
@@ -117,7 +147,7 @@ def module_setup(self):
         self.demod = blocks.complex_to_mag()  # envelope det
     elif modtype == "fm":
         self.rxif_filter = filter.fir_filter_ccc(
-            1, firdes.low_pass(1, self.fs_audio, self.bwrx / 2, 200, firdes.WIN_HAMMING, 6.76)
+            1, firdes.low_pass(1, self.fs_audio, self.bwrx / 2, 200, window.WIN_HAMMING, 6.76)
         )
 
         self.demod = analog.nbfm_rx(
@@ -127,7 +157,7 @@ def module_setup(self):
         self.rxif_filter = filter.fir_filter_ccc(
             1,
             firdes.band_pass(
-                1, self.samp_rate, self.frx + 300, self.frx + 4000, 2500, firdes.WIN_HAMMING, 6.76
+                1, self.samp_rate, self.frx + 300, self.frx + 4000, 2500, window.WIN_HAMMING, 6.76
             ),
         )
 
@@ -137,10 +167,11 @@ def module_setup(self):
         self.demod = blocks.complex_to_float()
 
     self.audio_bpf = filter.fir_filter_fff(
-        1, firdes.band_pass(1, self.fs_audio, 300, 3400, 200, firdes.WIN_HAMMING, 6.76)
+        1, firdes.band_pass(1, self.fs_audio, 300, 3400, 200, window.WIN_HAMMING, 6.76)
     )
 
-    self.audio_out = audio.sink(self.fs_audio, "", False)
+    # Allow the sink to block to reduce drop/overrun churn under GUI load.
+    self.audio_out = audio.sink(self.fs_audio, "", True)
 
 
 def text(tl, snr):
@@ -160,40 +191,49 @@ def text(tl, snr):
     return txt
 
 
-def scope(name, fsamp, tl, vpk, ntype, autoscale=False):
+def as_qwidget(widget_obj):
+    # GNU Radio may return either a QWidget or a wrapped pointer depending on version/build.
+    if isinstance(widget_obj, Qt.QWidget):
+        return widget_obj
+    return sip.wrapinstance(int(widget_obj), Qt.QWidget)
+
+
+def scope(name, fsamp, tl, vpk, ntype, autoscale=False, y_label="Amplitude", y_units="Volts"):
+    plot_size = 512
 
     if ntype is complex:
         scope = qtgui.time_sink_c(
-            1024, fsamp, name, 1  # size  # samp_rate  # name  # number of inputs
+            plot_size, fsamp, name, 1  # size  # samp_rate  # name  # number of inputs
         )
     else:
         scope = qtgui.time_sink_f(
-            1024, fsamp, name, 1  # size  # samp_rate  # name  # number of inputs
+            plot_size, fsamp, name, 1  # size  # samp_rate  # name  # number of inputs
         )
-    scope.set_update_time(0.10)
+    scope.set_update_time(0.40)
     if isinstance(vpk, (tuple, list)):
         scope.set_y_axis(vpk[0], vpk[1])
     else:
         scope.set_y_axis(-vpk, vpk)
 
-    scope.set_y_label("Amplitude", "Volts")
-    scope.enable_tags(-1, True)
+    scope.set_y_label(y_label, y_units)
+    scope.enable_tags(True)
     scope.set_trigger_mode(qtgui.TRIG_MODE_FREE, qtgui.TRIG_SLOPE_POS, 0.0, 0, 0, "")
     scope.enable_autoscale(autoscale)
     scope.enable_grid(True)
     scope.enable_control_panel(False)
     #   self.scope_tx.disable_legend()
 
-    _scope_win = sip.wrapinstance(scope.pyqwidget(), Qt.QWidget)
+    _scope_win = as_qwidget(scope.qwidget())
     tl.addWidget(_scope_win)
     return scope
 
 
 def specan(name, fsamp, tl, ntype, autoscale=True, minmax=(-180, 0)):
-    if isinstance(ntype, complex):
+    fft_size = 512
+    if ntype is complex:
         specan = qtgui.freq_sink_c(
-            1024,  # size
-            firdes.WIN_RECTANGULAR,  # wintype
+            fft_size,  # size
+            window.WIN_RECTANGULAR,  # wintype
             0,  # fc
             fsamp,  # bw
             name,  # name
@@ -201,27 +241,24 @@ def specan(name, fsamp, tl, ntype, autoscale=True, minmax=(-180, 0)):
         )
     else:
         specan = qtgui.freq_sink_f(
-            1024,  # size
-            firdes.WIN_RECTANGULAR,  # wintype
+            fft_size,  # size
+            window.WIN_RECTANGULAR,  # wintype
             0,  # fc
             fsamp,  # bw
             name,  # name
             1,  # number of inputs
         )
 
-    specan.set_update_time(0.10)
+    specan.set_update_time(0.40)
     specan.set_y_axis(minmax[0], minmax[1])
     specan.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
     specan.enable_autoscale(autoscale)
     specan.enable_grid(True)
-    specan.set_fft_average(1.0)
-    specan.enable_control_panel(True)
+    specan.set_fft_average(0.2)
+    specan.enable_control_panel(False)
     #        specan.disable_legend()
 
-    if isinstance(complex, float):
-        specan.set_plot_pos_half(not True)
-
-    _specan_win = sip.wrapinstance(specan.pyqwidget(), Qt.QWidget)
+    _specan_win = as_qwidget(specan.qwidget())
     tl.addWidget(_specan_win)
     return specan
 
@@ -339,26 +376,41 @@ class top_block(gr.top_block, Qt.QWidget):
         #        _snr_disp_thread.daemon = True
         #        _snr_disp_thread.start()
         # %% SINAD
-        # TODO make probe instead of stream
-        self.sinad_est = sinad_ff(1000, self.fs_audio)
-        self.connect(self.audio_bpf, self.sinad_est)
-        scope_sinad = scope("SINAD", self.fs_audio, self.top_layout, (0, 50), float)
-        self.connect(self.sinad_est, scope_sinad)
+        # Numeric readout + low-rate trend plot.
+        if ENABLE_SINAD:
+            self.sinad_est = Sinad(1000, self.fs_audio)
+            self.sinad_smooth = filter.single_pole_iir_filter_ff(SINAD_DISPLAY_SMOOTH_ALPHA, 1)
+            self.sinad_probe = blocks.probe_signal_f()
+            self.sinad_trend_decim = blocks.keep_one_in_n(
+                gr.sizeof_float, GUI_KEEP_ONE_IN_N_SINAD_TREND
+            )
+            self.connect(self.audio_bpf, self.sinad_est, self.sinad_smooth)
+            self.connect(self.sinad_smooth, self.sinad_probe)
+            self.connect(self.sinad_smooth, self.sinad_trend_decim)
 
-        #        self.sinad_probe = blocks.probe_signal_f()
-        #        sinad_ff(1000,self.fs_audio)
-        #        def _sinad_probe():
-        #            while True:
-        #                sinad = self.sinad_probe.level()
-        #                print(sinad)
-        #                time.sleep(0.5)
-        #
-        #        #setup thread
-        #        _sinad_thread=threading.Thread(target=_sinad_probe)
-        #        _sinad_thread.daemon = True
-        #        _sinad_thread.start()
-        #
-        #        self.connect(self.audio_bpf,self.sinad_probe)
+            self.sinad_tool_bar = Qt.QToolBar(self)
+            self.sinad_tool_bar.addWidget(Qt.QLabel("SINAD: "))
+            self.sinad_value_label = Qt.QLabel("-- dB")
+            self.sinad_tool_bar.addWidget(self.sinad_value_label)
+            self.top_layout.addWidget(self.sinad_tool_bar)
+
+            def _update_sinad_label():
+                val = self.sinad_probe.level()
+                if isfinite(val):
+                    self.sinad_value_label.setText(f"{val:.1f} dB")
+                else:
+                    self.sinad_value_label.setText("-- dB")
+
+            self.sinad_timer = Qt.QTimer(self)
+            self.sinad_timer.timeout.connect(_update_sinad_label)
+            self.sinad_timer.start(SINAD_NUMERIC_UPDATE_MS)
+
+            sinad_trend_rate = self.fs_audio / GUI_KEEP_ONE_IN_N_SINAD_TREND
+            scope_sinad = scope(
+                "SINAD trend", sinad_trend_rate, self.top_layout, (-3, 30), float, y_label="SINAD", y_units="dB"
+            )
+            scope_sinad.set_update_time(0.75)
+            self.connect(self.sinad_trend_decim, scope_sinad)
 
         # %% plots
         if 0:
@@ -375,28 +427,35 @@ class top_block(gr.top_block, Qt.QWidget):
             )
             self.connect(self.rxif_filter, scope_rxif_filter)
 
-        if 1:
+        if ENABLE_RXIF_SPECAN:
 
             if modtype in ("am", "ssb"):
+                self.specan_rxif_decim = blocks.keep_one_in_n(
+                    gr.sizeof_gr_complex, GUI_KEEP_ONE_IN_N_COMPLEX
+                )
                 specan_rxif = specan(
                     "RX IF", self.samp_rate, self.top_layout, complex, False, (-180, -100)
                 )
-                self.connect(self.rxif_filter, specan_rxif)
+                self.connect(self.rxif_filter, self.specan_rxif_decim, specan_rxif)
             else:
+                self.specan_rxif_decim = blocks.keep_one_in_n(
+                    gr.sizeof_gr_complex, GUI_KEEP_ONE_IN_N_COMPLEX
+                )
                 specan_rxif = specan(
                     "RX IF", self.fs_audio, self.top_layout, complex, False, (-180, -100)
                 )
-                self.connect(self.rx_downsample, specan_rxif)
+                self.connect(self.rx_downsample, self.specan_rxif_decim, specan_rxif)
 
         if 0:
             scope_rxaudio = scope("RX audio", self.samp_rate, self.top_layout, v2dbm, float)
             self.connect(self.audio_bpf, scope_rxaudio)
 
-        if 1:
+        if ENABLE_RXAUDIO_SPECAN:
+            self.specan_rxaudio_decim = blocks.keep_one_in_n(gr.sizeof_float, GUI_KEEP_ONE_IN_N_FLOAT)
             specan_rxaudio = specan(
                 "RX audio", self.fs_audio, self.top_layout, float, False, (-100, 0)
             )
-            self.connect(self.audio_bpf, specan_rxaudio)
+            self.connect(self.audio_bpf, self.specan_rxaudio_decim, specan_rxaudio)
 
     # %%
 
@@ -494,14 +553,47 @@ if __name__ == "__main__":
             x11 = ctypes.cdll.LoadLibrary("libX11.so")
             x11.XInitThreads()
         except Exception:
-            print("Warning: failed to XInitThreads()")
+            logging.warning("failed to XInitThreads()")
 
     parser = OptionParser(option_class=eng_option, usage="%prog: [options]")
+    parser.add_option(
+        "--audio-only",
+        action="store_true",
+        default=False,
+        help="Stable mode with analysis widgets disabled",
+    )
+    parser.add_option(
+        "--audio-spec",
+        action="store_true",
+        default=False,
+        help="Enable RX audio spectrum only",
+    )
+    parser.add_option(
+        "--full-analysis",
+        action="store_true",
+        default=False,
+        help="Enable SINAD plus RX IF and RX audio spectrums",
+    )
     (options, args) = parser.parse_args()
-    from distutils.version import StrictVersion
 
-    if StrictVersion(Qt.qVersion()) >= StrictVersion("4.5.0"):
-        Qt.QApplication.setGraphicsSystem(gr.prefs().get_string("qtgui", "style", "raster"))
+    selected_profiles = []
+    if options.audio_only:
+        selected_profiles.append("audio-only")
+    if options.audio_spec:
+        selected_profiles.append("audio-spec")
+    if options.full_analysis:
+        selected_profiles.append("full-analysis")
+
+    if len(selected_profiles) > 1:
+        parser.error("choose only one of --audio-only, --audio-spec, --full-analysis")
+
+    profile = selected_profiles[0] if selected_profiles else "audio-only"
+    set_analysis_profile(profile)
+    logging.info("analysis profile: %s", profile)
+
+    if gr.enable_realtime_scheduling() != gr.RT_OK:
+        logging.warning("failed to enable realtime scheduling")
+
     qapp = Qt.QApplication(sys.argv)
     tb = top_block()
     tb.start()
@@ -511,6 +603,5 @@ if __name__ == "__main__":
         tb.stop()
         tb.wait()
 
-    qapp.connect(qapp, Qt.SIGNAL("aboutToQuit()"), quitting)
+    qapp.aboutToQuit.connect(quitting)
     qapp.exec_()
-    tb = None  # to clean up Qt widgets

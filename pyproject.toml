@@ -1,5 +1,19 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gnuradio_ham"
+version = "0.1.0"
+description = "GNU Radio examples for Ham radio"
+requires-python = ">=3.10"
+dependencies = ["PyQt5", "gnuradio >= 3.9"]
 
 [tool.black]
 line-length = 99
+
+[tool.mypy]
+files = ["."]
+install_types = true
+exclude = ["^build([/\\\\]|$)"]
+ignore_missing_imports = true

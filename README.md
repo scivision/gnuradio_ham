@@ -15,12 +15,13 @@ possible. They work via files recorded to disk using your computer's
 microphone.
 
 There are numerous references for SSB transmitters and receivers, such
-as the ARRL Handbook, or the [Philips AN1981 application
-note](http://www.nxp.com/documents/application_note/an1981.pdf). In
-AN1981, Fig. 8 shows the Weaver method receiver (note I only use the
-part to the right of the filters, since I didn't use filtering). In
-AN1981, Fig. 5 shows the Phasing method transmitter. In both cases,
-ignore the divide-by-4 of AN1981 as that's peculiar to their system.
+as the ARRL Handbook, or the
+[Philips AN1981 application
+note](http://www.nxp.com/documents/application_note/an1981.pdf).
+In AN1981, Fig. 8 shows the Weaver method receiver (note I only use the
+part to the right of the filters, since I didn't use filtering).
+In AN1981, Fig. 5 shows the Phasing method transmitter.
+In both cases, ignore the divide-by-4 of AN1981 as that's peculiar to their system.
 
 ### Simplest synthetic SSB simulation
 
